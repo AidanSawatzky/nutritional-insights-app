@@ -1,0 +1,5 @@
+services:
+  diet-analysis:
+    image: aidansawatzky/diet-analysis
+    volumes:
+      - ./output:/app/output
