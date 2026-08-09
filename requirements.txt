@@ -7,3 +7,5 @@ azure-storage-blob
 pandas
 matplotlib
 seaborn
+azure-data-tables
+PyJWT
