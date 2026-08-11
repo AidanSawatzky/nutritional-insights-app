@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nutritional Insights</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.0/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-100">
+
+    <header class="bg-blue-600 p-4 text-white flex justify-between items-center">
+        <h1 class="text-3xl font-semibold">Nutritional Insights</h1>
+        <div id="userBar" class="hidden items-center gap-3 flex">
+            <span id="usernameLabel" class="font-semibold"></span>
+            <button onclick="logout()" class="bg-white text-blue-600 py-1 px-3 rounded text-sm">Logout</button>
+        </div>
+    </header>
+
+    <!-- LOGIN / REGISTER SCREEN -->
+    <section id="authSection" class="max-w-md mx-auto mt-16 bg-white p-6 shadow-lg rounded-lg">
+        <h2 class="text-xl font-semibold mb-4">Sign in to continue</h2>
+
+        <div id="authError" class="hidden text-red-600 text-sm mb-3"></div>
+
+        <input id="authUsername" type="text" placeholder="Username (register only)" class="p-2 border rounded w-full mb-2">
+        <input id="authEmail" type="email" placeholder="Email" class="p-2 border rounded w-full mb-2">
+        <input id="authPassword" type="password" placeholder="Password" class="p-2 border rounded w-full mb-3">
+
+        <div class="flex gap-2 mb-4">
+            <button onclick="doLogin()" class="bg-blue-600 text-white py-2 px-4 rounded w-full">Login</button>
+            <button onclick="doRegister()" class="bg-gray-600 text-white py-2 px-4 rounded w-full">Register</button>
+        </div>
+
+        <hr class="mb-4">
+        <a href="/.auth/login/github?post_login_redirect_uri=/" class="block text-center bg-gray-900 text-white py-2 px-4 rounded mb-2">Sign in with GitHub</a>
+        <button disabled title="Not implemented for this project" class="block w-full text-center bg-gray-300 text-gray-500 py-2 px-4 rounded cursor-not-allowed">Sign in with Google (not implemented)</button>
+    </section>
+
+    <!-- MAIN DASHBOARD (hidden until logged in) -->
+    <main id="appMain" class="hidden container mx-auto p-6">
+
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Explore Nutritional Insights</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white p-4 shadow-lg rounded-lg">
+                    <h3 class="font-semibold">Bar Chart</h3>
+                    <p class="text-sm text-gray-600">Average protein by diet type.</p>
+                    <canvas id="barChart" class="w-full h-48"></canvas>
+                </div>
+
+                <div class="bg-white p-4 shadow-lg rounded-lg">
+                    <h3 class="font-semibold">Scatter Plot</h3>
+                    <p class="text-sm text-gray-600">Protein vs Carbs (current search results).</p>
+                    <canvas id="scatterPlot" class="w-full h-48"></canvas>
+                </div>
+
+                <div class="bg-white p-4 shadow-lg rounded-lg">
+                    <h3 class="font-semibold">Heatmap</h3>
+                    <p class="text-sm text-gray-600">Avg macros by diet type (color-scaled).</p>
+                    <div id="heatmap" class="w-full text-xs"></div>
+                </div>
+
+                <div class="bg-white p-4 shadow-lg rounded-lg">
+                    <h3 class="font-semibold">Pie Chart</h3>
+                    <p class="text-sm text-gray-600">Avg fat share by diet type.</p>
+                    <canvas id="pieChart" class="w-full h-48"></canvas>
+                </div>
+            </div>
+            <div id="metaInfo" class="mt-3 text-sm text-gray-600"></div>
+        </section>
+
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Filters and Data Interaction</h2>
+            <div class="flex flex-wrap gap-4 mb-4">
+                <input id="keywordInput" type="text" placeholder="Search by recipe/cuisine keyword" class="p-2 border rounded w-full sm:w-auto">
+                <select id="dietTypeSelect" class="p-2 border rounded w-full sm:w-auto">
+                    <option value="">All Diet Types</option>
+                    <option value="vegan">Vegan</option>
+                    <option value="keto">Keto</option>
+                    <option value="paleo">Paleo</option>
+                    <option value="mediterranean">Mediterranean</option>
+                    <option value="dash">DASH</option>
+                </select>
+            </div>
+
+            <div class="overflow-x-auto bg-white shadow-lg rounded-lg">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="p-2 text-left">Diet Type</th>
+                            <th class="p-2 text-left">Recipe</th>
+                            <th class="p-2 text-left">Cuisine</th>
+                            <th class="p-2 text-right">Protein (g)</th>
+                            <th class="p-2 text-right">Carbs (g)</th>
+                            <th class="p-2 text-right">Fat (g)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recipeTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">API Data Interaction</h2>
+            <div class="flex flex-wrap gap-4">
+                <button onclick="loadInsights()" class="bg-blue-600 text-white py-2 px-4 rounded">Get Nutritional Insights</button>
+                <button onclick="loadRecipes(1)" class="bg-green-600 text-white py-2 px-4 rounded">Get Recipes</button>
+                <button disabled title="Not implemented for this project" class="bg-gray-300 text-gray-500 py-2 px-4 rounded cursor-not-allowed">Get Clusters (not implemented)</button>
+            </div>
+        </section>
+
+        <section class="mt-8">
+            <h2 class="text-2xl font-semibold mb-4">Security & Compliance</h2>
+            <div class="bg-white p-4 shadow-lg rounded-lg">
+                <h3 class="font-semibold">Security Status</h3>
+                <p class="text-sm text-gray-600">Data at rest: <span class="font-semibold text-green-600">Encrypted (Azure Storage default)</span></p>
+                <p class="text-sm text-gray-600">Passwords: <span class="font-semibold text-green-600">Never stored in plaintext (PBKDF2 hash + salt)</span></p>
+                <p class="text-sm text-gray-600">Access Control: <span class="font-semibold text-green-600">Login required to view dashboard</span></p>
+            </div>
+        </section>
+
+        <section class="mt-8">
+            <h2 class="text-2xl font-semibold mb-4">Cloud Resource Cleanup</h2>
+            <div class="bg-white p-4 shadow-lg rounded-lg">
+                <p class="text-sm text-gray-600">Resource teardown is performed manually by the team via Azure CLI after grading, not exposed here for safety (a public button that deletes cloud infrastructure would be a serious security risk).</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold mb-4">Pagination</h2>
+            <div id="paginationControls" class="flex justify-center items-center gap-2 mt-4"></div>
+        </section>
+    </main>
+
+    <footer class="bg-blue-600 p-4 text-white text-center mt-10">
+        <p>&copy; 2026 Nutritional Insights. All Rights Reserved.</p>
+    </footer>
+
+<script>
+const API_BASE = "https://diet-analysis-func-sait2026.azurewebsites.net/api/";
+let currentPage = 1;
+let charts = {};
+
+async function checkAuth() {
+    const token = sessionStorage.getItem("token");
+    if (token) return { loggedIn: true, username: sessionStorage.getItem("username") };
+
+    try {
+        const res = await fetch("/.auth/me");
+        const data = await res.json();
+        if (data.clientPrincipal) return { loggedIn: true, username: data.clientPrincipal.userDetails };
+    } catch (e) { /* not on Static Web Apps yet (local testing) */ }
+
+    return { loggedIn: false };
+}
+
+function showAuthError(msg) {
+    const el = document.getElementById("authError");
+    el.textContent = msg;
+    el.classList.remove("hidden");
+}
+
+async function doRegister() {
+    const username = document.getElementById("authUsername").value;
+    const email = document.getElementById("authEmail").value;
+    const password = document.getElementById("authPassword").value;
+
+    const res = await fetch(API_BASE + "register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password })
+    });
+    const data = await res.json();
+
+    if (res.status === 201) {
+        await doLogin();
+    } else {
+        showAuthError(data.error || "Registration failed");
+    }
+}
+
+async function doLogin() {
+    const email = document.getElementById("authEmail").value;
+    const password = document.getElementById("authPassword").value;
+
+    const res = await fetch(API_BASE + "login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if (res.status === 200) {
+        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("username", data.username);
+        enterApp(data.username);
+    } else {
+        showAuthError(data.error || "Login failed");
+    }
+}
+
+function logout() {
+    sessionStorage.clear();
+    if (window.location.pathname !== "/") {
+        window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
+    } else {
+        window.location.reload();
+    }
+}
+
+function enterApp(username) {
+    document.getElementById("authSection").classList.add("hidden");
+    document.getElementById("appMain").classList.remove("hidden");
+    document.getElementById("userBar").classList.remove("hidden");
+    document.getElementById("usernameLabel").textContent = username;
+    loadInsights();
+    loadRecipes(1);
+}
+
+function colorForValue(value, max) {
+    const intensity = Math.min(255, Math.round((value / max) * 200) + 55);
+    return `rgb(${255 - intensity + 55}, ${intensity}, 120)`;
+}
+
+async function loadInsights() {
+    const res = await fetch(API_BASE + "getresults");
+    const data = await res.json();
+
+    document.getElementById("metaInfo").textContent =
+        `Processed at: ${data.processed_at} | Total recipes: ${data.total_recipes} | Highest protein diet: ${data.highest_protein_diet}`;
+
+    const rows = data.avg_macros_per_diet;
+    const labels = rows.map(r => r.Diet_type);
+    const protein = rows.map(r => r["Protein(g)"]);
+    const fat = rows.map(r => r["Fat(g)"]);
+
+    if (charts.bar) charts.bar.destroy();
+    charts.bar = new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: { labels, datasets: [{ label: "Avg Protein (g)", data: protein, backgroundColor: "#2563eb" }] }
+    });
+
+    if (charts.pie) charts.pie.destroy();
+    charts.pie = new Chart(document.getElementById("pieChart"), {
+        type: "pie",
+        data: { labels, datasets: [{ data: fat, backgroundColor: labels.map((_, i) => `hsl(${i * 45},70%,60%)`) }] }
+    });
+
+    const maxProtein = Math.max(...rows.map(r => r["Protein(g)"]));
+    let heatmapHtml = `<table class="w-full"><tr><th class="p-1">Diet</th><th class="p-1">Protein</th><th class="p-1">Carbs</th><th class="p-1">Fat</th></tr>`;
+    rows.forEach(r => {
+        heatmapHtml += `<tr>
+            <td class="p-1">${r.Diet_type}</td>
+            <td class="p-1" style="background:${colorForValue(r["Protein(g)"], maxProtein)}">${r["Protein(g)"]}</td>
+            <td class="p-1" style="background:${colorForValue(r["Carbs(g)"], maxProtein)}">${r["Carbs(g)"]}</td>
+            <td class="p-1" style="background:${colorForValue(r["Fat(g)"], maxProtein)}">${r["Fat(g)"]}</td>
+        </tr>`;
+    });
+    heatmapHtml += `</table>`;
+    document.getElementById("heatmap").innerHTML = heatmapHtml;
+}
+
+async function loadRecipes(page) {
+    currentPage = page;
+    const dietType = document.getElementById("dietTypeSelect").value;
+    const keyword = document.getElementById("keywordInput").value;
+
+    const params = new URLSearchParams({ page, page_size: 10 });
+    if (dietType) params.set("diet_type", dietType);
+    if (keyword) params.set("keyword", keyword);
+
+    const res = await fetch(API_BASE + "searchrecipes?" + params.toString());
+    const data = await res.json();
+
+    const tbody = document.getElementById("recipeTableBody");
+    tbody.innerHTML = data.results.map(r => `
+        <tr class="border-t">
+            <td class="p-2">${r.Diet_type ?? ""}</td>
+            <td class="p-2">${r.Recipe_name ?? ""}</td>
+            <td class="p-2">${r.Cuisine_type ?? ""}</td>
+            <td class="p-2 text-right">${r["Protein(g)"] ?? ""}</td>
+            <td class="p-2 text-right">${r["Carbs(g)"] ?? ""}</td>
+            <td class="p-2 text-right">${r["Fat(g)"] ?? ""}</td>
+        </tr>
+    `).join("");
+
+    if (charts.scatter) charts.scatter.destroy();
+    charts.scatter = new Chart(document.getElementById("scatterPlot"), {
+        type: "scatter",
+        data: {
+            datasets: [{
+                label: "Protein vs Carbs",
+                data: data.results.map(r => ({ x: r["Carbs(g)"], y: r["Protein(g)"] })),
+                backgroundColor: "#16a34a"
+            }]
+        },
+        options: { scales: { x: { title: { display: true, text: "Carbs (g)" } }, y: { title: { display: true, text: "Protein (g)" } } } }
+    });
+
+    renderPagination(data.page, data.total_pages);
+}
+
+function renderPagination(page, totalPages) {
+    const el = document.getElementById("paginationControls");
+    el.innerHTML = `
+        <button onclick="loadRecipes(${Math.max(1, page - 1)})" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Previous</button>
+        <span class="px-3 py-1">Page ${page} of ${totalPages}</span>
+        <button onclick="loadRecipes(${Math.min(totalPages, page + 1)})" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Next</button>
+    `;
+}
+
+(async function init() {
+    const auth = await checkAuth();
+    if (auth.loggedIn) {
+        enterApp(auth.username);
+    }
+})();
+</script>
+
+</body>
+</html>
