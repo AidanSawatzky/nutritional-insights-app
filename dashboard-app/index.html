@@ -202,11 +202,7 @@ async function doLogin() {
 
 function logout() {
     sessionStorage.clear();
-    if (window.location.pathname !== "/") {
-        window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
-    } else {
-        window.location.reload();
-    }
+    window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
 }
 
 function enterApp(username) {
